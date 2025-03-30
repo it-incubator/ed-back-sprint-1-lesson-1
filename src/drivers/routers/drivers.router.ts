@@ -1,9 +1,9 @@
 import { Request, Response, Router } from 'express';
 import { DriverInputDto } from '../dto/driver.input-dto';
 import { vehicleInputDtoValidation } from '../validation/vehicleInputDtoValidation';
-import { Driver } from '../types/driver';
 import { HttpStatus } from '../../core/types/http-statuses';
 import { createErrorMessages } from '../../core/utils/error.utils';
+import { Driver } from '../types/driver';
 import { db } from '../../db/in-memory.db';
 
 export const driversRouter = Router({});

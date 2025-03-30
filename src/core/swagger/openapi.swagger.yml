@@ -1,0 +1,11 @@
+openapi: 3.0.0
+info:
+  title: Uber API
+  version: 1.0.0
+  description: Uber API documentation
+
+tags:
+  - name: Testing
+    description: API for clearing the database
+  - name: Drivers
+    description: API for managing drivers

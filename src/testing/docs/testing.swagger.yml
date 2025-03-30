@@ -1,0 +1,12 @@
+tags:
+  - name: Testing
+    description: API for clearing the database
+
+paths:
+  /api/testing/all-data:
+    delete:
+      summary: "Clear database: delete all data from all tables/collections"
+      tags: [ Testing ]
+      responses:
+        204:
+          description: All data deleted

@@ -1,0 +1,239 @@
+tags:
+  - name: Drivers
+    description: API for managing drivers
+
+paths:
+  /api/drivers:
+    get:
+      summary: Get a list of all drivers
+      tags: [ Drivers ]
+      responses:
+        200:
+          description: List of all drivers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Driver'
+    post:
+      summary: Add a new driver
+      tags: [ Drivers ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverInputDto'
+      responses:
+        201:
+          description: The driver was successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /api/drivers/{id}:
+    get:
+      summary: Get a driver by ID
+      tags: [ Drivers ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: "The unique identifier of the driver"
+          schema:
+            type: integer
+            example: 2
+      responses:
+        200:
+          description: The requested driver
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+        404:
+          description: Driver not found
+    put:
+      summary: Update a driver by ID
+      tags: [ Drivers ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: "The unique identifier of the driver"
+          schema:
+            type: integer
+            example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverInputDto'
+      responses:
+        204:
+          description: Driver updated successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        404:
+          description: Driver not found
+    delete:
+      summary: Delete a driver by ID
+      tags: [ Drivers ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: "The unique identifier of the driver"
+          schema:
+            type: integer
+            example: 2
+      responses:
+        204:
+          description: Driver deleted successfully
+        404:
+          description: Driver not found
+components:
+  schemas:
+    Driver:
+      type: object
+      required:
+        - id
+        - name
+        - phoneNumber
+        - email
+        - vehicleMake
+        - vehicleModel
+        - vehicleYear
+        - vehicleLicensePlate
+        - vehicleFeatures
+        - createdAt
+      properties:
+        id:
+          type: integer
+          description: "The unique identifier for the driver"
+          example: 2
+        name:
+          type: string
+          description: "The full name of the driver"
+          example: "Tom Rider"
+        phoneNumber:
+          type: string
+          description: "The driver's phone number"
+          example: "123-456-7890"
+        email:
+          type: string
+          description: "The driver's email address"
+          example: "tom.rider@example.com"
+        vehicleMake:
+          type: string
+          description: "The make of the vehicle"
+          example: "Toyota"
+        vehicleModel:
+          type: string
+          description: "The model of the vehicle"
+          example: "Camry"
+        vehicleYear:
+          type: integer
+          description: "The year the vehicle was manufactured"
+          example: 2020
+        vehicleLicensePlate:
+          type: string
+          description: "The vehicle's license plate number"
+          example: "XYZ 1234"
+        vehicleDescription:
+          type: string
+          nullable: true
+          description: "A description of the vehicle, including any notable features or conditions"
+          example: "A spacious SUV with leather seats and a sunroof."
+        vehicleFeatures:
+          type: array
+          items:
+            type: string
+            enum: [ wi-fi, child-seat, pet-friendly ]
+          description: "Features available in the vehicle. Choose from the provided options"
+          example: [ "wi-fi", "pet-friendly" ]
+        createdAt:
+          type: string
+          format: date-time
+          description: "The date and time when the driver was created"
+          example: "2023-03-05T12:00:00Z"
+    DriverInputDto:
+      type: object
+      required:
+        - name
+        - phoneNumber
+        - email
+        - vehicleMake
+        - vehicleModel
+        - vehicleYear
+        - vehicleLicensePlate
+        - vehicleFeatures
+      properties:
+        name:
+          type: string
+          description: "The full name of the driver"
+          example: "Tom Rider"
+        phoneNumber:
+          type: string
+          description: "The driver's phone number"
+          example: "123-456-7890"
+        email:
+          type: string
+          description: "The driver's email address"
+          example: "tom.rider@example.com"
+        vehicleMake:
+          type: string
+          description: "The make of the vehicle"
+          example: "Toyota"
+        vehicleModel:
+          type: string
+          description: "The model of the vehicle"
+          example: "Camry"
+        vehicleYear:
+          type: integer
+          description: "The year the vehicle was manufactured"
+          example: 2025
+        vehicleLicensePlate:
+          type: string
+          description: "The vehicle's license plate number"
+          example: "XYZ 1234"
+        vehicleDescription:
+          type: string
+          nullable: true
+          description: "A description of the vehicle, including any notable features or conditions"
+          example: "A spacious SUV with leather seats and a sunroof"
+        vehicleFeatures:
+          type: array
+          items:
+            type: string
+            enum: [ wi-fi, child-seat, pet-friendly ]
+          description: "Features available in the vehicle. Choose from the provided options"
+          example: [ "wi-fi", "pet-friendly" ]
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+          example: "name"
+        message:
+          type: string
+          example: "Invalid name"
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errorMessages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
