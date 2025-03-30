@@ -24,12 +24,17 @@ describe('Driver API', () => {
     await request(app).delete('/testing/all-data').expect(HttpStatus.NoContent);
   });
 
-  it('should create driver; POST /drivers', async () => {
+  it('should create driver; POST drivers', async () => {
     const newDriver: DriverInputDto = {
-      ...testDriverData,
-      name: 'Valentin',
-      phoneNumber: '123-456-7890',
-      email: 'valentin@example.com',
+      name: 'Feodor',
+      phoneNumber: '987-654-3210',
+      email: 'feodor@example.com',
+      vehicleMake: 'Audi',
+      vehicleModel: 'A6',
+      vehicleYear: 2020,
+      vehicleLicensePlate: 'XYZ-456',
+      vehicleDescription: null,
+      vehicleFeatures: [],
     };
 
     await request(app)
