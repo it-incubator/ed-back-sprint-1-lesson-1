@@ -13,10 +13,21 @@ export const setupApp = (app: Express) => {
   app.get('/drivers', (req: Request, res: Response) => {
     res.status(200).send(db.drivers);
   });
-  app.get('/drivers/:id', (req: Request, res: Response) => {
-    const driver = db.drivers.find((d) => d.id === +req.params.id);
-    res.status(200).send(driver);
-  });
+  app.get(
+    '/drivers/:id',
+    (
+      req: Request<{ id: string }, Driver, {}, {}>,
+      res: Response<Driver | null>,
+    ) => {
+      const driver = db.drivers.find((d) => d.id === +req.params.id);
+      if (!driver) {
+        res.sendStatus(404);
+        return;
+      }
+      res.status(200).send(driver);
+    },
+  );
+
   app.post('/drivers', (req: Request, res: Response) => {
     //1) проверяем приходящие данные на валидность
 
