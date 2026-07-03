@@ -22,12 +22,14 @@ describe('Driver API body validation check', () => {
   };
 
   beforeAll(async () => {
-    await request(app).delete('/testing/all-data').expect(HttpStatus.NoContent);
+    await request(app)
+      .delete('/api/testing/all-data')
+      .expect(HttpStatus.NoContent);
   });
 
-  it(`should not create driver when incorrect body passed; POST /drivers`, async () => {
+  it(`should not create driver when incorrect body passed; POST /api/drivers`, async () => {
     const invalidDataSet1 = await request(app)
-      .post('/drivers')
+      .post('/api/drivers')
       .send({
         ...correctTestDriverData,
         name: '   ', // пустая строка
@@ -40,7 +42,7 @@ describe('Driver API body validation check', () => {
     expect(invalidDataSet1.body.errorMessages).toHaveLength(4);
 
     const invalidDataSet2 = await request(app)
-      .post('/drivers')
+      .post('/api/drivers')
       .send({
         ...correctTestDriverData,
         phoneNumber: '', // пустая строка
@@ -53,7 +55,7 @@ describe('Driver API body validation check', () => {
     expect(invalidDataSet2.body.errorMessages).toHaveLength(4);
 
     const invalidDataSet3 = await request(app)
-      .post('/drivers')
+      .post('/api/drivers')
       .send({
         ...correctTestDriverData,
         name: 'A', // слишком короткое
@@ -63,20 +65,20 @@ describe('Driver API body validation check', () => {
     expect(invalidDataSet3.body.errorMessages).toHaveLength(1);
 
     // Проверяем, что ни один невалидный водитель не создался.
-    const driverListResponse = await request(app).get('/drivers');
+    const driverListResponse = await request(app).get('/api/drivers');
     expect(driverListResponse.body).toHaveLength(0);
   });
 
-  it('should not update driver when incorrect data passed; PUT /drivers/:id', async () => {
+  it('should not update driver when incorrect data passed; PUT /api/drivers/:id', async () => {
     const {
       body: { id: createdDriverId },
     } = await request(app)
-      .post('/drivers')
+      .post('/api/drivers')
       .send({ ...correctTestDriverData })
       .expect(HttpStatus.Created);
 
     const invalidDataSet1 = await request(app)
-      .put(`/drivers/${createdDriverId}`)
+      .put(`/api/drivers/${createdDriverId}`)
       .send({
         ...correctTestDriverData,
         name: '   ',
@@ -89,7 +91,7 @@ describe('Driver API body validation check', () => {
     expect(invalidDataSet1.body.errorMessages).toHaveLength(4);
 
     const invalidDataSet2 = await request(app)
-      .put(`/drivers/${createdDriverId}`)
+      .put(`/api/drivers/${createdDriverId}`)
       .send({
         ...correctTestDriverData,
         phoneNumber: '', // пустая строка
@@ -102,7 +104,7 @@ describe('Driver API body validation check', () => {
     expect(invalidDataSet2.body.errorMessages).toHaveLength(4);
 
     const invalidDataSet3 = await request(app)
-      .put(`/drivers/${createdDriverId}`)
+      .put(`/api/drivers/${createdDriverId}`)
       .send({
         ...correctTestDriverData,
         name: 'A', // слишком короткое
@@ -113,7 +115,7 @@ describe('Driver API body validation check', () => {
 
     // Данные водителя не должны измениться после невалидных запросов.
     const driverResponse = await request(app).get(
-      `/drivers/${createdDriverId}`,
+      `/api/drivers/${createdDriverId}`,
     );
 
     expect(driverResponse.body).toEqual({
@@ -123,16 +125,16 @@ describe('Driver API body validation check', () => {
     });
   });
 
-  it('should not update driver when incorrect features passed; PUT /drivers/:id', async () => {
+  it('should not update driver when incorrect features passed; PUT /api/drivers/:id', async () => {
     const {
       body: { id: createdDriverId },
     } = await request(app)
-      .post('/drivers')
+      .post('/api/drivers')
       .send({ ...correctTestDriverData })
       .expect(HttpStatus.Created);
 
     await request(app)
-      .put(`/drivers/${createdDriverId}`)
+      .put(`/api/drivers/${createdDriverId}`)
       .send({
         ...correctTestDriverData,
         vehicleFeatures: [
@@ -145,7 +147,7 @@ describe('Driver API body validation check', () => {
 
     // Данные водителя не должны измениться.
     const driverResponse = await request(app).get(
-      `/drivers/${createdDriverId}`,
+      `/api/drivers/${createdDriverId}`,
     );
 
     expect(driverResponse.body).toEqual({

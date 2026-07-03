@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { driversRouter } from './drivers/routers/drivers.router';
 import { testingRouter } from './testing/routers/testing.router';
+import { setupSwagger } from './core/swagger/setup-swagger';
 import { HttpStatus } from './core/types/http-statuses';
 
 export const setupApp = (app: Express) => {
@@ -12,9 +13,12 @@ export const setupApp = (app: Express) => {
     res.status(HttpStatus.Ok).send('Hello world!');
   });
 
-  // Каждый модуль подключается по своему базовому пути.
-  app.use('/drivers', driversRouter);
-  app.use('/testing', testingRouter);
+  // Каждый модуль подключается по своему базовому пути (все ресурсы — под /api).
+  app.use('/api/drivers', driversRouter);
+  app.use('/api/testing', testingRouter);
+
+  // Swagger UI с документацией API (доступно по /api).
+  setupSwagger(app);
 
   return app;
 };
