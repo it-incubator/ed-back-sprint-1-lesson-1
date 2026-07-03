@@ -1,4 +1,4 @@
-import { DriverInputDto } from '../dto/driver.input.dto';
+import { DriverAttributes } from '../dto/driver-attributes';
 import { VehicleFeature } from '../types/driver';
 import { ValidationError } from '../../core/types/validation-error';
 
@@ -11,10 +11,10 @@ const isInvalidString = (value: unknown, min: number, max: number): boolean =>
   value.trim().length < min ||
   value.trim().length > max;
 
-// Ручная валидация тела запроса (на этом этапе — без сторонних библиотек).
+// Ручная валидация атрибутов водителя (data.attributes из JSON:API-запроса).
 // Возвращает список ошибок; пустой список означает, что данные корректны.
-export const validateDriverInputDto = (
-  data: DriverInputDto,
+export const validateDriverAttributes = (
+  data: DriverAttributes,
 ): ValidationError[] => {
   const errors: ValidationError[] = [];
 

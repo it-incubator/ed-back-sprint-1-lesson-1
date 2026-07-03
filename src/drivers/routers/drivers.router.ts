@@ -3,20 +3,22 @@ import { db } from '../../db/in-memory.db';
 import { HttpStatus } from '../../core/types/http-statuses';
 import { createErrorMessages } from '../../core/utils/error.utils';
 import { Driver } from '../types/driver';
-import { DriverInputDto } from '../dto/driver.input.dto';
-import { validateDriverInputDto } from '../validation/driver-input-dto.validation';
+import { DriverCreateInput, DriverUpdateInput } from '../dto/driver.input';
+import { DriverListOutput } from '../dto/driver.output';
+import { validateDriverAttributes } from '../validation/driver-attributes.validation';
+import { mapToDriverOutput } from './mappers/map-driver-to-output';
+import { mapToDriverListOutput } from './mappers/map-list-drivers-to-output';
 
-// Все маршруты, связанные с водителями, вынесены в отдельный роутер.
-// В setup-app он подключается по базовому пути '/drivers'.
+// Все ответы этого роутера — в формате JSON:API (data / type / id / attributes).
 export const driversRouter = Router({});
 
 driversRouter
-  // Список всех водителей.
-  .get('', (req: Request, res: Response) => {
-    res.status(HttpStatus.Ok).send(db.drivers);
+  // Список всех водителей: { meta, data: [...] }.
+  .get('', (req: Request, res: Response<DriverListOutput>) => {
+    res.status(HttpStatus.Ok).send(mapToDriverListOutput(db.drivers));
   })
 
-  // Один водитель по id.
+  // Один водитель по id: { data: { ... } }.
   .get('/:id', (req: Request<{ id: string }>, res: Response) => {
     const driver = db.drivers.find((d) => d.id === +req.params.id);
 
@@ -29,12 +31,14 @@ driversRouter
       return;
     }
 
-    res.status(HttpStatus.Ok).send(driver);
+    res.status(HttpStatus.Ok).send(mapToDriverOutput(driver));
   })
 
-  // Создание водителя: сначала валидируем тело, затем создаём.
-  .post('', (req: Request<{}, {}, DriverInputDto>, res: Response) => {
-    const errors = validateDriverInputDto(req.body);
+  // Создание водителя: валидируем атрибуты, затем создаём.
+  .post('', (req: Request<{}, {}, DriverCreateInput>, res: Response) => {
+    const attributes = req.body.data.attributes;
+
+    const errors = validateDriverAttributes(attributes);
 
     if (errors.length > 0) {
       res.status(HttpStatus.BadRequest).send(createErrorMessages(errors));
@@ -45,26 +49,18 @@ driversRouter
 
     const newDriver: Driver = {
       id: lastDriver ? lastDriver.id + 1 : 1,
-      name: req.body.name,
-      phoneNumber: req.body.phoneNumber,
-      email: req.body.email,
-      vehicleMake: req.body.vehicleMake,
-      vehicleModel: req.body.vehicleModel,
-      vehicleYear: req.body.vehicleYear,
-      vehicleLicensePlate: req.body.vehicleLicensePlate,
-      vehicleDescription: req.body.vehicleDescription,
-      vehicleFeatures: req.body.vehicleFeatures,
+      ...attributes,
       createdAt: new Date(),
     };
 
     db.drivers.push(newDriver);
-    res.status(HttpStatus.Created).send(newDriver);
+    res.status(HttpStatus.Created).send(mapToDriverOutput(newDriver));
   })
 
-  // Обновление водителя: проверяем, что он существует, затем валидируем тело.
+  // Обновление водителя: проверяем существование, затем валидируем атрибуты.
   .put(
     '/:id',
-    (req: Request<{ id: string }, {}, DriverInputDto>, res: Response) => {
+    (req: Request<{ id: string }, {}, DriverUpdateInput>, res: Response) => {
       const index = db.drivers.findIndex((d) => d.id === +req.params.id);
 
       if (index === -1) {
@@ -76,15 +72,17 @@ driversRouter
         return;
       }
 
-      const errors = validateDriverInputDto(req.body);
+      const attributes = req.body.data.attributes;
+
+      const errors = validateDriverAttributes(attributes);
 
       if (errors.length > 0) {
         res.status(HttpStatus.BadRequest).send(createErrorMessages(errors));
         return;
       }
 
-      // Обновляем поля из тела запроса, сохраняя служебные id и createdAt.
-      db.drivers[index] = { ...db.drivers[index], ...req.body };
+      // Обновляем поля из attributes, сохраняя служебные id и createdAt.
+      db.drivers[index] = { ...db.drivers[index], ...attributes };
 
       res.sendStatus(HttpStatus.NoContent);
     },

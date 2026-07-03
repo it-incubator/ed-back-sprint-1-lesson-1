@@ -1,6 +1,6 @@
 tags:
   - name: Drivers
-    description: API for managing drivers
+    description: API for managing drivers (JSON:API format)
 
 paths:
   /api/drivers:
@@ -13,9 +13,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Driver'
+                $ref: '#/components/schemas/DriverListOutput'
     post:
       summary: Add a new driver
       tags: [Drivers]
@@ -24,14 +22,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DriverInputDto'
+              $ref: '#/components/schemas/DriverCreateInput'
       responses:
         201:
           description: The driver was successfully created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Driver'
+                $ref: '#/components/schemas/DriverOutput'
         400:
           description: Validation error
           content:
@@ -49,15 +47,15 @@ paths:
           required: true
           description: 'The unique identifier of the driver'
           schema:
-            type: integer
-            example: 2
+            type: string
+            example: '2'
       responses:
         200:
           description: The requested driver
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Driver'
+                $ref: '#/components/schemas/DriverOutput'
         404:
           description: Driver not found
     put:
@@ -69,14 +67,14 @@ paths:
           required: true
           description: 'The unique identifier of the driver'
           schema:
-            type: integer
-            example: 2
+            type: string
+            example: '2'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DriverInputDto'
+              $ref: '#/components/schemas/DriverUpdateInput'
       responses:
         204:
           description: Driver updated successfully
@@ -97,8 +95,8 @@ paths:
           required: true
           description: 'The unique identifier of the driver'
           schema:
-            type: integer
-            example: 2
+            type: string
+            example: '2'
       responses:
         204:
           description: Driver deleted successfully
@@ -107,10 +105,10 @@ paths:
 
 components:
   schemas:
-    Driver:
+    # Плоские атрибуты водителя (data.attributes).
+    DriverAttributes:
       type: object
       required:
-        - id
         - name
         - phoneNumber
         - email
@@ -119,109 +117,89 @@ components:
         - vehicleYear
         - vehicleLicensePlate
         - vehicleFeatures
-        - createdAt
       properties:
-        id:
-          type: integer
-          description: 'The unique identifier for the driver'
-          example: 2
         name:
           type: string
-          description: 'The full name of the driver'
           example: 'Tom Rider'
         phoneNumber:
           type: string
-          description: "The driver's phone number"
           example: '123-456-7890'
         email:
           type: string
-          description: "The driver's email address"
           example: 'tom.rider@example.com'
         vehicleMake:
           type: string
-          description: 'The make of the vehicle'
           example: 'Toyota'
         vehicleModel:
           type: string
-          description: 'The model of the vehicle'
           example: 'Camry'
         vehicleYear:
           type: integer
-          description: 'The year the vehicle was manufactured'
           example: 2020
         vehicleLicensePlate:
           type: string
-          description: "The vehicle's license plate number"
           example: 'XYZ 1234'
         vehicleDescription:
           type: string
           nullable: true
-          description: 'A description of the vehicle, including any notable features or conditions'
           example: 'A spacious SUV with leather seats and a sunroof.'
         vehicleFeatures:
           type: array
           items:
             type: string
             enum: [wi-fi, child-seat, pet-friendly]
-          description: 'Features available in the vehicle. Choose from the provided options'
           example: ['wi-fi', 'pet-friendly']
-        createdAt:
-          type: string
-          format: date-time
-          description: 'The date and time when the driver was created'
-          example: '2023-03-05T12:00:00Z'
-    DriverInputDto:
+    # JSON:API-ресурс водителя в ответе.
+    DriverResource:
       type: object
-      required:
-        - name
-        - phoneNumber
-        - email
-        - vehicleMake
-        - vehicleModel
-        - vehicleYear
-        - vehicleLicensePlate
-        - vehicleFeatures
       properties:
-        name:
+        type:
           type: string
-          description: 'The full name of the driver'
-          example: 'Tom Rider'
-        phoneNumber:
+          enum: [drivers]
+        id:
           type: string
-          description: "The driver's phone number"
-          example: '123-456-7890'
-        email:
-          type: string
-          description: "The driver's email address"
-          example: 'tom.rider@example.com'
-        vehicleMake:
-          type: string
-          description: 'The make of the vehicle'
-          example: 'Toyota'
-        vehicleModel:
-          type: string
-          description: 'The model of the vehicle'
-          example: 'Camry'
-        vehicleYear:
-          type: integer
-          description: 'The year the vehicle was manufactured'
-          example: 2025
-        vehicleLicensePlate:
-          type: string
-          description: "The vehicle's license plate number"
-          example: 'XYZ 1234'
-        vehicleDescription:
-          type: string
-          nullable: true
-          description: 'A description of the vehicle, including any notable features or conditions'
-          example: 'A spacious SUV with leather seats and a sunroof'
-        vehicleFeatures:
+          example: '2'
+        attributes:
+          $ref: '#/components/schemas/DriverAttributes'
+    DriverCreateInput:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [drivers]
+            attributes:
+              $ref: '#/components/schemas/DriverAttributes'
+    DriverUpdateInput:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [drivers]
+            id:
+              type: string
+              example: '2'
+            attributes:
+              $ref: '#/components/schemas/DriverAttributes'
+    DriverOutput:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/DriverResource'
+    DriverListOutput:
+      type: object
+      properties:
+        meta:
+          type: object
+        data:
           type: array
           items:
-            type: string
-            enum: [wi-fi, child-seat, pet-friendly]
-          description: 'Features available in the vehicle. Choose from the provided options'
-          example: ['wi-fi', 'pet-friendly']
+            $ref: '#/components/schemas/DriverResource'
     ValidationError:
       type: object
       properties:

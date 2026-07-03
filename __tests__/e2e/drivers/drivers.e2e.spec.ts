@@ -1,15 +1,20 @@
 import request from 'supertest';
 import express from 'express';
 import { setupApp } from '../../../src/setup-app';
-import { DriverInputDto } from '../../../src/drivers/dto/driver.input.dto';
 import { HttpStatus } from '../../../src/core/types/http-statuses';
 import { VehicleFeature } from '../../../src/drivers/types/driver';
+import { ResourceType } from '../../../src/core/types/resource-type';
+import { DriverAttributes } from '../../../src/drivers/dto/driver-attributes';
+import {
+  DriverCreateInput,
+  DriverUpdateInput,
+} from '../../../src/drivers/dto/driver.input';
 
 describe('Driver API', () => {
   const app = express();
   setupApp(app);
 
-  const testDriverData: DriverInputDto = {
+  const correctAttributes: DriverAttributes = {
     name: 'Valentin',
     phoneNumber: '123-456-7890',
     email: 'valentin@example.com',
@@ -21,6 +26,13 @@ describe('Driver API', () => {
     vehicleFeatures: [],
   };
 
+  // Оборачивает атрибуты в JSON:API-конверт создания.
+  const createBody = (
+    attributes: DriverAttributes = correctAttributes,
+  ): DriverCreateInput => ({
+    data: { type: ResourceType.Drivers, attributes },
+  });
+
   beforeAll(async () => {
     await request(app)
       .delete('/api/testing/all-data')
@@ -28,62 +40,54 @@ describe('Driver API', () => {
   });
 
   it('should create driver; POST /api/drivers', async () => {
-    const newDriver: DriverInputDto = {
-      ...testDriverData,
-      name: 'Valentin',
-      phoneNumber: '123-456-7890',
-      email: 'valentin@example.com',
-    };
-
     await request(app)
       .post('/api/drivers')
-      .send(newDriver)
+      .send(createBody({ ...correctAttributes, name: 'Fedor' }))
       .expect(HttpStatus.Created);
   });
 
   it('should return drivers list; GET /api/drivers', async () => {
     await request(app)
       .post('/api/drivers')
-      .send({ ...testDriverData, name: 'Another Driver' })
+      .send(createBody({ ...correctAttributes, name: 'Another Driver1' }))
       .expect(HttpStatus.Created);
 
     await request(app)
       .post('/api/drivers')
-      .send({ ...testDriverData, name: 'Another Driver2' })
+      .send(createBody({ ...correctAttributes, name: 'Another Driver2' }))
       .expect(HttpStatus.Created);
 
     const driverListResponse = await request(app)
       .get('/api/drivers')
       .expect(HttpStatus.Ok);
 
-    expect(driverListResponse.body).toBeInstanceOf(Array);
-    expect(driverListResponse.body.length).toBeGreaterThanOrEqual(2);
+    // В JSON:API список ресурсов лежит в поле data.
+    expect(driverListResponse.body.data).toBeInstanceOf(Array);
+    expect(driverListResponse.body.data.length).toBeGreaterThanOrEqual(2);
   });
 
   it('should return driver by id; GET /api/drivers/:id', async () => {
     const createResponse = await request(app)
       .post('/api/drivers')
-      .send({ ...testDriverData, name: 'Another Driver' })
+      .send(createBody({ ...correctAttributes, name: 'Another Driver3' }))
       .expect(HttpStatus.Created);
 
     const getResponse = await request(app)
-      .get(`/api/drivers/${createResponse.body.id}`)
+      .get(`/api/drivers/${createResponse.body.data.id}`)
       .expect(HttpStatus.Ok);
 
-    expect(getResponse.body).toEqual({
-      ...createResponse.body,
-      id: expect.any(Number),
-      createdAt: expect.any(String),
-    });
+    expect(getResponse.body).toEqual(createResponse.body);
   });
 
   it('should update driver; PUT /api/drivers/:id', async () => {
     const createResponse = await request(app)
       .post('/api/drivers')
-      .send({ ...testDriverData, name: 'Another Driver' })
+      .send(createBody({ ...correctAttributes, name: 'Another Driver4' }))
       .expect(HttpStatus.Created);
 
-    const driverUpdateData: DriverInputDto = {
+    const createdId = createResponse.body.data.id;
+
+    const updateAttributes: DriverAttributes = {
       name: 'Updated Name',
       phoneNumber: '999-888-7777',
       email: 'updated@example.com',
@@ -95,34 +99,44 @@ describe('Driver API', () => {
       vehicleFeatures: [VehicleFeature.ChildSeat],
     };
 
+    const updateBody: DriverUpdateInput = {
+      data: {
+        type: ResourceType.Drivers,
+        id: createdId,
+        attributes: updateAttributes,
+      },
+    };
+
     await request(app)
-      .put(`/api/drivers/${createResponse.body.id}`)
-      .send(driverUpdateData)
+      .put(`/api/drivers/${createdId}`)
+      .send(updateBody)
       .expect(HttpStatus.NoContent);
 
-    const driverResponse = await request(app).get(
-      `/api/drivers/${createResponse.body.id}`,
-    );
+    const driverResponse = await request(app).get(`/api/drivers/${createdId}`);
 
     expect(driverResponse.body).toEqual({
-      ...driverUpdateData,
-      id: createResponse.body.id,
-      createdAt: expect.any(String),
+      data: {
+        type: ResourceType.Drivers,
+        id: createdId,
+        attributes: updateAttributes,
+      },
     });
   });
 
   it('should delete driver and check after "NOT FOUND"; DELETE /api/drivers/:id', async () => {
     const createResponse = await request(app)
       .post('/api/drivers')
-      .send({ ...testDriverData, name: 'Another Driver' })
+      .send(createBody({ ...correctAttributes, name: 'Another Driver5' }))
       .expect(HttpStatus.Created);
 
+    const createdId = createResponse.body.data.id;
+
     await request(app)
-      .delete(`/api/drivers/${createResponse.body.id}`)
+      .delete(`/api/drivers/${createdId}`)
       .expect(HttpStatus.NoContent);
 
     await request(app)
-      .get(`/api/drivers/${createResponse.body.id}`)
+      .get(`/api/drivers/${createdId}`)
       .expect(HttpStatus.NotFound);
   });
 });
