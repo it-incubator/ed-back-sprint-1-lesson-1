@@ -3,6 +3,8 @@ import { db } from './db/in-memory.db';
 import { HttpStatus } from './core/types/http-statuses';
 import { Driver } from './drivers/types/driver';
 import { DriverInputDto } from './drivers/dto/driver.input.dto';
+import { validateDriverInputDto } from './drivers/validation/driver-input-dto.validation';
+import { createErrorMessages } from './core/utils/error.utils';
 
 export const setupApp = (app: Express) => {
   // express.json() парсит JSON из тела запроса и кладёт его в req.body.
@@ -19,23 +21,33 @@ export const setupApp = (app: Express) => {
   });
 
   // Один водитель по id.
-  app.get(
-    '/drivers/:id',
-    (req: Request<{ id: string }>, res: Response<Driver>) => {
-      const driver = db.drivers.find((d) => d.id === +req.params.id);
+  app.get('/drivers/:id', (req: Request<{ id: string }>, res: Response) => {
+    const driver = db.drivers.find((d) => d.id === +req.params.id);
 
-      if (!driver) {
-        res.sendStatus(HttpStatus.NotFound);
+    if (!driver) {
+      res
+        .status(HttpStatus.NotFound)
+        .send(
+          createErrorMessages([{ field: 'id', message: 'Driver not found' }]),
+        );
+      return;
+    }
+
+    res.status(HttpStatus.Ok).send(driver);
+  });
+
+  // Создание водителя. Сначала валидируем тело запроса вручную,
+  // и только при отсутствии ошибок создаём водителя.
+  app.post(
+    '/drivers',
+    (req: Request<{}, {}, DriverInputDto>, res: Response) => {
+      const errors = validateDriverInputDto(req.body);
+
+      if (errors.length > 0) {
+        res.status(HttpStatus.BadRequest).send(createErrorMessages(errors));
         return;
       }
 
-      res.status(HttpStatus.Ok).send(driver);
-    },
-  );
-
-  app.post(
-    '/drivers',
-    (req: Request<{}, {}, DriverInputDto>, res: Response<Driver>) => {
       const lastDriver = db.drivers[db.drivers.length - 1];
 
       const newDriver: Driver = {
