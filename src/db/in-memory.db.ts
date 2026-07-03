@@ -1,5 +1,7 @@
 import { Driver, VehicleFeature } from '../drivers/types/driver';
 
+// Простое хранилище в памяти вместо настоящей базы данных.
+// Данные живут только пока запущен сервер и сбрасываются при перезапуске.
 export const db = {
   drivers: <Driver[]>[
     {

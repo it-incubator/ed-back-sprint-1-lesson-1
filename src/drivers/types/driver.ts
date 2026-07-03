@@ -4,6 +4,7 @@ export enum VehicleFeature {
   PetFriendly = 'pet-friendly',
 }
 
+// Данные храним в массиве в памяти, поэтому id — обычное число (позже, с БД, станет строкой).
 export type Driver = {
   id: number;
   name: string;
