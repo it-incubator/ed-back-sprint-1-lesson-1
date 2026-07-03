@@ -66,4 +66,92 @@ describe('Driver API body validation check', () => {
     const driverListResponse = await request(app).get('/drivers');
     expect(driverListResponse.body).toHaveLength(0);
   });
+
+  it('should not update driver when incorrect data passed; PUT /drivers/:id', async () => {
+    const {
+      body: { id: createdDriverId },
+    } = await request(app)
+      .post('/drivers')
+      .send({ ...correctTestDriverData })
+      .expect(HttpStatus.Created);
+
+    const invalidDataSet1 = await request(app)
+      .put(`/drivers/${createdDriverId}`)
+      .send({
+        ...correctTestDriverData,
+        name: '   ',
+        phoneNumber: '    ',
+        email: 'invalid email',
+        vehicleMake: '',
+      })
+      .expect(HttpStatus.BadRequest);
+
+    expect(invalidDataSet1.body.errorMessages).toHaveLength(4);
+
+    const invalidDataSet2 = await request(app)
+      .put(`/drivers/${createdDriverId}`)
+      .send({
+        ...correctTestDriverData,
+        phoneNumber: '', // пустая строка
+        vehicleModel: '', // пустая строка
+        vehicleYear: 'year', // не число
+        vehicleLicensePlate: '', // пустая строка
+      })
+      .expect(HttpStatus.BadRequest);
+
+    expect(invalidDataSet2.body.errorMessages).toHaveLength(4);
+
+    const invalidDataSet3 = await request(app)
+      .put(`/drivers/${createdDriverId}`)
+      .send({
+        ...correctTestDriverData,
+        name: 'A', // слишком короткое
+      })
+      .expect(HttpStatus.BadRequest);
+
+    expect(invalidDataSet3.body.errorMessages).toHaveLength(1);
+
+    // Данные водителя не должны измениться после невалидных запросов.
+    const driverResponse = await request(app).get(
+      `/drivers/${createdDriverId}`,
+    );
+
+    expect(driverResponse.body).toEqual({
+      ...correctTestDriverData,
+      id: createdDriverId,
+      createdAt: expect.any(String),
+    });
+  });
+
+  it('should not update driver when incorrect features passed; PUT /drivers/:id', async () => {
+    const {
+      body: { id: createdDriverId },
+    } = await request(app)
+      .post('/drivers')
+      .send({ ...correctTestDriverData })
+      .expect(HttpStatus.Created);
+
+    await request(app)
+      .put(`/drivers/${createdDriverId}`)
+      .send({
+        ...correctTestDriverData,
+        vehicleFeatures: [
+          VehicleFeature.ChildSeat,
+          'invalid-feature',
+          VehicleFeature.WiFi,
+        ],
+      })
+      .expect(HttpStatus.BadRequest);
+
+    // Данные водителя не должны измениться.
+    const driverResponse = await request(app).get(
+      `/drivers/${createdDriverId}`,
+    );
+
+    expect(driverResponse.body).toEqual({
+      ...correctTestDriverData,
+      id: createdDriverId,
+      createdAt: expect.any(String),
+    });
+  });
 });
